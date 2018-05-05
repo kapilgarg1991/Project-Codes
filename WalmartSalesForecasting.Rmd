@@ -1,0 +1,206 @@
+---
+title: "Walmart Sales Forecasting"
+author: "Kapil Garg, Prashant Mishra, Sarvesh Bangad, Natasha Arora"
+date: "04/24/2018"
+output:
+  html_document:
+    toc: yes
+  pdf_document:
+    toc: yes
+---
+
+
+#  Running all the required libraies
+```{r}
+library(forecast)
+library(tseries)
+#install.packages("fpp")
+library(fpp)
+#install.packages("sqldf")
+library(sqldf)
+library(car)
+library(caTools)
+library(caret)
+#install.packages("RANN")
+library('RANN')
+#install.packages("mice")
+library(mice)
+library(DMwR)
+```
+
+
+# Importing the dataset
+```{r}
+setwd("~/Desktop/U Conn/Lectures/Data Mining/Project/")
+features<-read.csv('features.csv')
+stores<-read.csv('stores.csv')
+train<-read.csv('train.csv')
+count<-0
+```
+
+
+# Checking the dataset
+```{r}
+head(train)
+head(stores)
+head(features)
+```
+
+
+
+# Merging the dataset
+```{r}
+df<-merge(train,stores,all.x = T)
+head(df)
+df1<-merge(df,features,all.x = T)
+head(df1)
+```
+
+
+# Defining the stores and departments (Selecting top 5 stores and department)
+```{r}
+# Uncomment below two line of code if you want to run the code for all department and all stores
+#st<-unique(df1$Store)   
+#dt<-unique(df1$Dept)
+
+st<-c(2,4,13,14,20)
+dt<-c(92,95,38,72,90)
+tot<-length(st)*length(dt)
+```
+
+
+
+# Running the model (ARIMA ETS), Appending the output in csv files
+```{r}
+setwd("~/Desktop/U Conn/Lectures/Data Mining/Project/")
+for(i in st){
+  for(j in dt){
+
+
+S1D1<-subset(df1,Store==i & Dept==j)
+
+str(S1D1,trace=FALSE)
+
+S1D1$Date<-as.character(S1D1$Date)
+S1D1$Store<- as.factor(S1D1$Store)
+S1D1$Dept<- as.factor(S1D1$Dept)
+S1D1$Type<- as.factor(S1D1$Type)
+
+S1D1$Size<- as.numeric(S1D1$Size)
+S1D1$MarkDown1<- as.numeric(S1D1$MarkDown1)
+S1D1$MarkDown2<- as.numeric(S1D1$MarkDown2)
+S1D1$MarkDown3<- as.numeric(S1D1$MarkDown3)
+S1D1$MarkDown4<- as.numeric(S1D1$MarkDown4)
+S1D1$MarkDown5<- as.numeric(S1D1$MarkDown5)
+sum(is.na(S1D1))
+
+imputed_data = mice(data = S1D1, m = 5, method = "rf", maxit = 10, seed = 500,trace=FALSE)
+S1D1 = complete(imputed_data,3)
+
+S1D1$Date <- as.Date(S1D1$Date,format= "%Y-%m-%d")
+
+S1D1_100 <- subset(S1D1,S1D1$Date > as.Date("2010-02-04",format= "%Y-%m-%d") 
+                                        & S1D1$Date < as.Date("2012-01-01",format= "%Y-%m-%d"))
+
+S1D1_t <- subset(S1D1,S1D1$Date > as.Date("2012-01-01",format= "%Y-%m-%d"))
+
+
+xregMatrix   <- data.frame(as.factor(S1D1_100$IsHoliday), 
+                           S1D1_100$Temperature,
+                           as.numeric(S1D1_100$MarkDown1),as.numeric(S1D1_100$MarkDown2),
+                           as.numeric(S1D1_100$MarkDown3),as.numeric(S1D1_100$MarkDown4),
+                           as.numeric(S1D1_100$Fuel_Price),as.numeric(S1D1_100$Unemployment),
+                           as.numeric(S1D1_100$CPI))
+
+
+
+xregMatrix1   <- data.frame(as.factor(S1D1_100$IsHoliday), 
+                           S1D1_100$Temperature,
+                           as.numeric(S1D1_100$MarkDown1),as.numeric(S1D1_100$MarkDown2),
+                           as.numeric(S1D1_100$MarkDown3),as.numeric(S1D1_100$MarkDown4),
+                           as.numeric(S1D1_100$Unemployment))
+train_matrix <- NULL
+train_matrix <- data.matrix(xregMatrix)
+train_matrix1 <- NULL
+train_matrix1 <- data.matrix(xregMatrix1)
+
+print(paste("Showing the results of store = ",i," department = ",j))
+
+tsDataSales<-ts(S1D1$Weekly_Sales,start=c(2010,5),frequency=52)
+plot(tsDataSales)
+
+
+
+
+plot(decompose(tsDataSales))
+train_sales<-window(tsDataSales,start=c(2010,5),end=c(2011,52),frequency = 52)
+test_sales<-window(tsDataSales,start=2012,frequency = 52)
+ndiffs(train_sales)
+Acf(train_sales,lag.max=52,plot=TRUE)
+Pacf(train_sales,lag.max=52,plot=TRUE,main="Original Time Series")
+
+print("Running the Arima Model with all regressors")
+tst_arima <- auto.arima(train_sales,seasonal = FALSE,xreg = train_matrix)
+print("Running the Arima Model excluding CPI and Fuel Price regressors")
+tst_arima1 <- auto.arima(train_sales,seasonal = FALSE,xreg = train_matrix1)
+#summary(tst_arima)
+print("Running the ETS (Error, Trend, Seasonality) model")
+ch<-ets(train_sales)
+
+accuracy(ch)
+tst_arima_resi <- residuals(tst_arima)
+summary(tst_arima_resi)
+
+
+
+plot(tst_arima_resi)
+qqnorm(tst_arima_resi)
+qqline(tst_arima_resi)
+
+box<-Box.test(tst_arima_resi,lag=52,type="Ljung-Box",fitdf=1)
+box
+
+forecastval <- forecast(tst_arima,h=52,xreg =train_matrix)
+forecastval1 <- forecast(tst_arima1,h=52,xreg =train_matrix1)
+
+final<-cbind(store=i,department=j,date=as.character(S1D1_100$Date),train=train_sales,forecast=forecastval$fitted)
+final_test<-cbind(store=i,department=j,date=as.character(S1D1_t$Date),
+                  test=S1D1_t$Weekly_Sales,forecast=forecastval$mean[1:length(test_sales)])
+
+
+final1<-cbind(store=i,department=j,date=as.character(S1D1_100$Date),
+              train=train_sales,forecast=forecastval1$fitted)
+final_test1<-cbind(store=i,department=j,date=as.character(S1D1_t$Date),
+                  test=S1D1_t$Weekly_Sales,forecast=forecastval1$mean[1:length(test_sales)])
+
+
+# Writing the output and appending them to the file
+write.table(final,"final.csv",sep = ",",append = TRUE,col.names = FALSE,row.names = FALSE)
+write.table(final_test,"final_test.csv",sep = ",",append = TRUE,col.names = FALSE,row.names = FALSE)
+write.table(cbind(store=i,department=j,as.data.frame(accuracy(tst_arima))),"accuracy.csv",sep=',',append=TRUE,
+            col.names = FALSE,row.names = FALSE)
+
+write.table(final,"final1.csv",sep = ",",append = TRUE,col.names = FALSE,row.names = FALSE)
+
+write.table(final_test,"final_test1.csv",sep = ",",append = TRUE,col.names = FALSE,row.names = FALSE)
+
+write.table(cbind(store=i,department=j,as.data.frame(accuracy(tst_arima1))),"accuracy1.csv",sep=',',append=TRUE,col.names = FALSE,row.names = FALSE)
+
+write.table(cbind(store=i,department=j,as.data.frame(accuracy(ch))),"accuracy_ets.csv",sep=',',append=TRUE,col.names = FALSE,row.names = FALSE)
+
+
+
+plot(forecastval,main="Prediction from Auto Arima for Weekly Sales")
+lines(test_sales,col="green")
+
+count<-count+1
+
+print(paste(count," out of ",tot," Completed"))
+print(paste(round(count/tot,2)*100,"% Completed"))
+
+  }
+}
+
+
+```
+
