@@ -1,0 +1,270 @@
+---
+title: "Python Exam"
+output:
+  html_document:
+    toc: yes
+---
+
+
+# Data Manipulation
+
+df.head()
+df.loc[2:3]
+df.loc[2:3,'mrate']
+df.loc[2:3]['mrate']
+df.loc[2:3][['mrate','prate']]
+df.describe()
+
+# Plot a histogram 
+
+import matplotlib.pyplot as plt
+df.hist(bins=100,figsize=20,15))
+df.hist(bins=100,figsize=(20,15)
+)
+plt.show()
+
+
+mask=(df.prate>=50)&(df.sole==1). #Filter the data
+df33=df.loc[mask]
+df33.head()
+df33.loc[df33.sole==0]. #Get the column names
+
+# Write the file
+
+df33.to_csv('sole1.csv'). 
+df33.to_csv('sole1.csv',index=False)
+
+# Create a new column in python
+
+df.loc[:,'newcol']=1
+df["another_col"]=""
+
+# Drop a column
+
+df.drop('newcol',axis=1) # Temporary Drop
+df.drop('newcol',axis=1,inplace=True) # Permanent Drop
+
+## Dropping by indexes
+### Delete row
+df.drop(df.index[[0,2]]).head()
+
+# Rename Column
+df.columns.value[0]='pa_rate'
+df.columns=['a','b','c'] 
+
+# Drop duplicates
+df1=df['prate']
+df1=df1.drop_duplicates()
+
+
+
+#-------Numpy------------#
+Import numpy as np
+df['log_prate']=np.log(df.prate)
+
+# Generate Series of number:
+pd.Series(range(1,100))
+Convert series to a dataframe
+a=pd.DataFrame(a)
+
+# Generate a sequence of dates
+df=pd.date_range('2017-01-01',periods=10,freq='D')
+df=pd.date_range('2017-01-01',periods=10,freq='B') # Skips holidays
+df=pd.date_range('2017-01-01',periods=10,freq='7D') # 7 Day interval
+
+Print date range with another date 7 days later
+ for i in d1:
+     print(i,i+timedelta(days=7))
+
+Concatinate two dataframe
+ab=pd.concat([a,b])
+ab.sort_values(0,inplace=True)
+ab.reset_index(drop=True,inplace=True)
+
+## Assigning nan some values
+Refer to slide 47 lecture 1
+
+# Merge dataframes
+cg=pd.merge(c,g,on=['course_id']) #Inner Join
+cg_left=pd.merge(c,g,on=['course_id'],how='left') #Left join
+## For cross join
+c1['key']=1
+s1['key']=1
+cg=pd.merge(c1,s1,on=['key']) #Cross join
+cs1.drop('key',axis=1,inplace=True)
+
+cg=pd.merge(c,g,on=['course_id','student_id',how='left']) #Left join on two fields
+
+# Numerical Operations
+df.groupby(['course_id'])['grade'].mean()
+df['education'].mean()
+df['education'].sum()
+df['education'].var()
+df['education'].std()
+np.var(df.mrate,ddof=1)  #for n-1 degree of freedom
+# multi group by
+f={
+'A':['mean'],
+'B':['sum'],
+'C':['count']
+}
+df1=df.groupby(['CAT']).agg(f)
+
+# Matrix
+## Assigning Array
+a=np.array([1,2,3,4,5])
+a=np.array([1,2,3],[4,5,6])
+a=np.random.randint(1,5,size=(3,3))
+
+np.transpose(a)
+a.T
+Check for symmetry
+b_symm=(b+b.T)/2
+
+np.dot(a,b) # Matrix Multiplication
+
+## Popular Matrix on slide 40 Lecture 2
+
+np.ones((3,3))
+np.identity(3)
+np.linalg.det(b) # Determinant of matrix
+np.linalg.inv(x) #inverse of a matrix
+
+
+# Linear Regression Model Lecture 3
+
+import statsmodels.api as sm
+y=d.wage
+X=d.educ
+X0=d.educ
+X=sm.add_constant(d.educ)
+X
+X.head()
+model=sm.OLS(y,X)
+results=model.fit()
+results.summary()
+predictions=results.predict()
+predictions=pd.Series(predictions)
+predictions.head()
+R=pd.concat([y,X,predictions],axis=1)
+R.columns.values[3]='Predicted_wage'
+res=results.resid
+R=pd.concat([res,R],axis=1)
+R.columns.value[0]='residual'
+
+pred_wage=b[0]*X.const+b[1]*X.educ #manual Calculation
+
+
+## SSE SST SSR Calculation
+res2=y-pred_wage
+SST=np.dot(y-y.mean(),(y-y.mean()).T)
+SSE=np.dot(pred_wage-y.mean(),(pred_wage-y.mean()).T)
+SSR=np.dot(res2,res2.T)
+Rsq=SSE/SST
+
+
+# Perceptron Model
+
+y = d.outcome
+X = d[['age','campaign','duration']]
+
+    from sklearn.metrics import f1_score
+    #### Enter your answer here
+    from sklearn.model_selection import train_test_split
+    X_train, X_test, y_train,y_test=train_test_split(X,y,test_size=0.3,random_state=0)
+    from sklearn.model_selection import train_test_split
+    X_train, X_test, y_train,y_test=train_test_split(X,y,test_size=0.3,random_state=0)
+    from sklearn.preprocessing import StandardScaler
+    sc=StandardScaler()
+    sc.fit(X_train)
+    X_train_std=sc.transform(X_train)
+    X_test_std=sc.transform(X_test)
+    from sklearn.linear_model import Perceptron
+    ppn=Perceptron(max_iter=40,eta0=0.1,random_state=0)
+    ppn.fit(X_train_std,y_train)
+    y_pred=ppn.predict(X_test_std)
+    ans =f1_score(y_test, y_pred, labels=None, pos_label=1, average='weighted',sample_weight=None)
+
+print('Misclassified Samples: %d' % (y_test != y_pred).sum())
+from sklearn.metrics import accuracy_score
+print('Accuracy: %2f' %accuracy_score(y_test,y_pred))
+From sklearn.metrics import classification_report, confusion_matrix
+print(confusion_matrix(y_test,y_pred))
+print(classification_report(y_test,y_pred))
+
+d.loc[(d.Gender=='male'),'gcode']=0  # to make variable gcode
+
+
+# Logistic regression Model
+    from sklearn.metrics import f1_score
+    #### Enter your answer here
+    from sklearn.model_selection import train_test_split
+    X_train, X_test, y_train,y_test=train_test_split(X,y,test_size=0.3,random_state=0)
+    from sklearn.model_selection import train_test_split
+    X_train, X_test, y_train,y_test=train_test_split(X,y,test_size=0.3,random_state=0)
+    from sklearn.preprocessing import StandardScaler
+    sc=StandardScaler()
+    sc.fit(X_train)
+    X_train_std=sc.transform(X_train)
+    X_test_std=sc.transform(X_test)
+    from sklearn.linear_model import LogisticRegression
+    lr=LogisticRegression(C=1000.0,random_state=0)
+    lr.fit(X_train_std,y_train)
+    y_pred=lr.predict(X_test_std)
+    ans = f1_score(y_test, y_pred, labels=None, pos_label=1, average='weighted',sample_weight=None)
+
+# SVM model
+
+    from sklearn.metrics import f1_score
+    #### Enter your answer here
+    from sklearn.model_selection import train_test_split
+    X_train, X_test, y_train,y_test=train_test_split(X,y,test_size=0.3,random_state=0)
+    from sklearn.model_selection import train_test_split
+    X_train, X_test, y_train,y_test=train_test_split(X,y,test_size=0.3,random_state=0)
+    from sklearn.preprocessing import StandardScaler
+    sc=StandardScaler()
+    sc.fit(X_train)
+    X_train_std=sc.transform(X_train)
+    X_test_std=sc.transform(X_test)
+    from sklearn.svm import SVC
+    svm=SVC(kernel='linear',C=1.0,random_state=0)
+    svm.fit(X_train_std,y_train)
+    y_pred=svm.predict(X_test_std)
+    ans = f1_score(y_test, y_pred, labels=None, pos_label=1, average='weighted',sample_weight=None)
+    #### End of answer
+    
+# Normal Distribution:
+
+np.random.normal(5, 3, 1000) 
+
+## Generate 50000 samples of 500 random numbers from a normal distribution
+    i = 0
+    n = 500 #sample size
+    numsamples = 50000 # number of samples
+    a = np.empty([numsamples,1])
+    mu = 7 # mean
+    sigma = 4 # standard deviation
+
+    while i < numsamples:
+        a[i,0] = np.random.normal(mu, sigma, n).mean()
+        i = i + 1
+    ans = a.std() # here 'a' is the array containing t
+    
+
+## Generate 1000 equally spaced numbers drawn from a normal distribution with mean 5 and standard deviation 3, between points covering 80% of the total area under the curve, symmetric about the midpoint
+
+    a=norm(5,3)
+    ans=np.linspace(a.ppf(0.1) , a.ppf(0.9), 100
+
+    #### Enter your answer here
+    a=norm(10,3)
+    ans= a.cdf(12)    
+    
+# Binning
+
+    bins = [-.0000000001, 0.5, 1, 1.5, 2,2.5,3,3.5,4]
+    group_names = [1,2,3,4,5,6,7,8]
+    df['bin'] = pd.cut(df['termGPA'], bins, labels=group_names)
+    df1= df.groupby(['bin'])['termGPA','priGPA','ACT'].mean()
+    df2= df.groupby(['bin'])['frosh','soph'].sum()
+    df3=pd.concat([df1,df2],axis=1)
